@@ -1,0 +1,17 @@
+FROM oraclelinux:8-slim as build
+RUN microdnf install -y oracle-release-el8 \
+&& microdnf install -y oracle-instantclient-release-el8 \
+&& microdnf install -y oracle-instantclient-basic \
+&& microdnf install -y oracle-instantclient-devel \
+&& microdnf install -y python3-devel \
+&& pip3 install cx_oracle
+
+FROM alpine:latest
+COPY --from=build /usr/lib/oracle /usr/lib/oracle
+COPY --from=build /usr/include/oracle /usr/include/oraclelinux
+RUN apk add --no-cache ca-certificates libaio python3 py3-pip \
+&& apk add --no-cache --virtual .build-deps gcc musl-dev libaio-dev python3-dev \
+&& pip install  --no-cache-dir --upgrade pip \
+&& pip install  --no-cache-dir cx_oracle \
+&& apk --purge del .build-deps \
+&& rm -Rf /root/.cache
